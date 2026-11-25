@@ -1,0 +1,36 @@
+channel:
+  language: vi              # ngôn ngữ kịch bản & giọng đọc
+  niche: "Phim kinh dị AI 60 giây, mỗi tập một câu chuyện độc lập có cú twist cuối"
+  style: "cinematic, dark, film grain, 35mm, moody lighting, photorealistic"
+
+story:
+  provider: anthropic        # anthropic | mock
+  model: claude-sonnet-5-5
+  scenes: 6
+  target_seconds: 58
+
+image:
+  provider: openai           # openai | mock
+  model: gpt-image-1
+  size: 1024x1536            # dọc, sẽ crop về 1080x1920
+
+video:
+  provider: kenburns         # kenburns (ảnh -> chuyển động) | thêm veo/runway/kling sau
+  width: 1080
+  height: 1920
+  fps: 30
+
+voice:
+  provider: edge             # edge (miễn phí) | elevenlabs | mock
+  edge_voice: vi-VN-NamMinhNeural
+  rate: "-8%"                # đọc chậm một chút cho không khí rùng rợn
+
+audio:
+  music_dir: assets/music    # bỏ nhạc nền có license vào đây (mp3/wav)
+  music_volume: 0.18
+  ambience: true             # tiếng ù nền tự sinh nếu không có nhạc
+
+upload:
+  privacy: private           # luôn private, bạn tự công khai sau khi xem lại
+  category_id: "1"           # Film & Animation
+  contains_synthetic_media: true
