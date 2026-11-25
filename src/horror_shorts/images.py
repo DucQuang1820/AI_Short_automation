@@ -16,7 +16,7 @@ def _mock_image(path: Path, text: str, i: int):
     img.save(path)
 
 
-def generate_images(cfg: dict, story: dict, out: Path, mock: bool = False) -> list[Path]:
+def generate_images(cfg: dict, story: dict, out: Path, mock: bool = False, costs=None) -> list[Path]:
     ic = cfg["image"]
     style = cfg["channel"]["style"]
     paths = []
@@ -27,12 +27,17 @@ def generate_images(cfg: dict, story: dict, out: Path, mock: bool = False) -> li
 
     for i, scene in enumerate(story["scenes"]):
         p = out / f"scene_{i:02d}.png"
+        paths.append(p)
+        if p.exists():
+            print(f"  ảnh {i + 1}: dùng lại bản đã có")
+            continue
         if client is None:
             _mock_image(p, scene["image_prompt"], i)
         else:
             prompt = f"{scene['image_prompt']}. Style: {style}. Vertical 9:16 frame, no text, no watermark."
             res = client.images.generate(model=ic["model"], prompt=prompt, size=ic["size"])
             p.write_bytes(base64.b64decode(res.data[0].b64_json))
-        paths.append(p)
+            if costs:
+                costs.add("image", note=f"cảnh {i + 1}")
         print(f"  ảnh {i + 1}/{len(story['scenes'])} ✓")
     return paths

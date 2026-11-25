@@ -8,6 +8,9 @@ story:
   model: claude-sonnet-5-5
   scenes: 6
   target_seconds: 58
+  max_hook_words: 16         # câu hook tối đa bao nhiêu từ
+  max_retries: 3             # viết lại kịch bản nếu không qua kiểm tra
+  title_similarity: 0.75     # tiêu đề giống video cũ hơn mức này => bắt viết lại
 
 image:
   provider: openai           # openai | mock
@@ -19,16 +22,39 @@ video:
   width: 1080
   height: 1920
   fps: 30
+  veo:
+    enabled: false           # bật khi đã có GOOGLE_API_KEY và chấp nhận chi phí
+    model: veo-3.1-generate-preview   # kiểm tra tên model hiện tại trên Google AI Studio
+    scenes: [0, -1]          # cảnh dùng Veo: 0 = hook đầu, -1 = cảnh twist cuối
+    resolution: 720p
 
 voice:
   provider: edge             # edge (miễn phí) | elevenlabs | mock
   edge_voice: vi-VN-NamMinhNeural
   rate: "-8%"                # đọc chậm một chút cho không khí rùng rợn
+  timing: auto               # auto: edge lấy mốc từng từ sẵn, provider khác dùng whisper_api
+                             # whisper_api | estimate (ước lượng, không tốn gì)
+
+captions:
+  words_per_group: 3         # số từ hiện cùng lúc trên màn hình
+  font: DejaVu Sans          # đổi sang font hỗ trợ tiếng Việt bạn thích
+  size: 92
+  highlight: "&H0000E5FF"    # màu từ đang đọc (ASS: &HAABBGGRR) — vàng
+  color: "&H00FFFFFF"
+  margin_v: 520              # khoảng cách từ đáy, tránh vùng nút của Shorts
 
 audio:
   music_dir: assets/music    # bỏ nhạc nền có license vào đây (mp3/wav)
   music_volume: 0.18
   ambience: true             # tiếng ù nền tự sinh nếu không có nhạc
+  loudness_lufs: -14         # chuẩn âm lượng của YouTube
+
+costs:                       # đơn giá ƯỚC TÍNH (USD) — cập nhật theo bảng giá thực tế
+  story: 0.03                # mỗi lần gọi LLM viết kịch bản
+  image: 0.06                # mỗi ảnh
+  veo_per_second: 0.40       # mỗi giây video Veo
+  elevenlabs_per_1k_chars: 0.30
+  whisper_per_minute: 0.006
 
 upload:
   privacy: private           # luôn private, bạn tự công khai sau khi xem lại

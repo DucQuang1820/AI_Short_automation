@@ -4,12 +4,16 @@ Pipeline tạo **phim kinh dị AI 60 giây** cho YouTube Shorts, 100% bằng AI
 kịch bản → ảnh → giọng đọc → dựng video → bạn duyệt → upload.
 
 ```
-Claude (kịch bản + cảnh + metadata)
+Claude (kịch bản + cảnh + metadata)  ──► cổng kiểm tra, tự viết lại tối đa 3 lần
    → OpenAI gpt-image-1 (ảnh từng cảnh)
-   → Edge TTS / ElevenLabs (giọng đọc)
-   → ffmpeg (chuyển động Ken Burns, film grain, vignette, phụ đề, nhạc nền)
+   → Veo image-to-video cho cảnh hook & twist (tùy chọn)
+   → Edge TTS / ElevenLabs (giọng đọc + mốc thời gian từng từ)
+   → ffmpeg (Ken Burns, film grain, vignette, phụ đề karaoke, nhạc nền, chuẩn -14 LUFS)
    → hàng chờ duyệt  →  YouTube Data API (upload private)
 ```
+
+Mỗi bước đều cache: ảnh, clip Veo, giọng đọc đã tạo sẽ không tạo lại khi chạy tiếp,
+nên lỗi giữa chừng không mất tiền. Chi phí ước tính của từng video ghi trong `costs.json`.
 
 ## Cài đặt
 
@@ -28,12 +32,26 @@ cd src
 python -m horror_shorts.cli make --mock     # chạy thử không tốn tiền, không cần key
 python -m horror_shorts.cli make            # tạo 1 video thật
 python -m horror_shorts.cli make -n 3       # tạo 3 video
+python -m horror_shorts.cli make --resume <id>   # chạy tiếp video lỗi giữa chừng
 python -m horror_shorts.cli list            # xem hàng chờ
 python -m horror_shorts.cli approve <id>    # sau khi TỰ XEM output/<id>/final.mp4
 python -m horror_shorts.cli upload <id>
 ```
 
-Mỗi video nằm trong `output/<id>/`: `story.json` (kịch bản, sửa tay được), ảnh, giọng, `final.mp4`.
+Mỗi video nằm trong `output/<id>/`: `story.json`, ảnh, giọng, `subs.ass`, `costs.json`, `final.mp4`.
+
+**Sửa tay rồi dựng lại:** sửa `story.json`, xóa các file của cảnh đã đổi
+(`scene_XX.png`, `voice_XX.*`, `clip_XX_*.mp4`) và `final.mp4`, rồi chạy `make --resume <id>`.
+
+## Các tính năng
+
+| Tính năng | Cấu hình | Ghi chú |
+|---|---|---|
+| Cổng kiểm tra kịch bản | `story.max_hook_words`, `max_retries`, `title_similarity` | Kiểm tra độ dài, hook, cảnh trùng, tiêu đề giống video cũ |
+| Veo cho cảnh hook/twist | `video.veo` | Mặc định tắt. Lỗi ở cảnh nào thì cảnh đó tự quay về Ken Burns |
+| Phụ đề karaoke | `captions` | Edge TTS cho sẵn mốc từng từ; ElevenLabs dùng Whisper API; không có thì ước lượng |
+| Chuẩn âm lượng | `audio.loudness_lufs` | -14 LUFS như khuyến nghị của YouTube |
+| Theo dõi chi phí | `costs` | Đơn giá là ước tính, hãy cập nhật theo bảng giá thật |
 
 ## Kết nối YouTube
 
@@ -57,7 +75,7 @@ Kiểm tra bảng giá hiện tại của từng nhà cung cấp trước khi ch
 
 ## Nâng cấp tiếp theo
 
-- **Video AI thật** thay cho ảnh + Ken Burns: thêm provider trong `assemble.py`/module mới gọi Veo, Runway, Kling hoặc Luma (image-to-video từ chính ảnh đã tạo).
+- **Vòng phản hồi Analytics**: lấy video chạy tốt nhất 30 ngày qua để định hướng ý tưởng (nên làm khi kênh có ~20–30 video).
 - **Nhạc nền**: bỏ file có license (YouTube Audio Library) vào `assets/music/`. Không có thì pipeline tự sinh tiếng ù nền.
 - **Hiệu ứng âm thanh** (tiếng gõ cửa, bước chân) theo từng cảnh.
 - **Series cố định**: một nhân vật kể chuyện xuyên suốt kênh để tạo dấu ấn riêng.
@@ -70,3 +88,9 @@ Kiểm tra bảng giá hiện tại của từng nhà cung cấp trước khi ch
 - Không đăng hàng loạt nội dung na ná nhau: YouTube coi đó là *inauthentic content* và từ chối kiếm tiền.
 - Giữ `contains_synthetic_media: true` (nhãn nội dung AI theo yêu cầu của YouTube).
 - Kịch bản được dặn tránh máu me chi tiết để giữ quảng cáo.
+
+## Tham khảo
+
+Một số ý tưởng (cổng kiểm tra kịch bản, chuẩn hóa âm lượng, Veo cho từng cảnh, phụ đề theo từng từ)
+được tham khảo từ shortube (MIT), youtube-shorts-agent, yt-shorts-ai và youtube-shorts-automation.
+Mã nguồn ở đây được viết lại, không sao chép.
